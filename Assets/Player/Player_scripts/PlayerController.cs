@@ -18,6 +18,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float pitchSmoothTime = 0.03f;
     [SerializeField] private float distSmoothTime = 0.05f;
     [SerializeField] private float turnSpeed = 12f; // 캐릭터 회전 속도
+    [SerializeField] private float lockOnDirectionDeadzone = 0.2f;
     private float yaw = 0f, pitch = 10f;
     private float yawVel = 0f, pitchVel = 0f;
     private float currentDistance = 0f, distVel = 0f;
@@ -54,6 +55,9 @@ public class PlayerController : MonoBehaviour
     {
         animator = CharacterBody.GetComponent<Animator>();
         rigid = GetComponent<Rigidbody>();
+
+        if (cameraTransform == null)
+            cameraTransform = Camera.main != null ? Camera.main.transform : null;
 
         // 초기 카메라 각/거리
         yaw = CharacterBody.eulerAngles.y; // 캐릭터 뒤에서 시작
@@ -110,36 +114,53 @@ public class PlayerController : MonoBehaviour
         {
             Jump();
         }
-
+        if (Input.GetKeyDown(lockOnKey))
+        {
+            if (isLockedOn) ClearLockOn();
+            else AcquireLockOn();
+        }
     }
     private void AcquireLockOn()
     {
-        Collider[] hits = Physics.OverlapSphere(CharacterBody.position, lockOnRadius, lockOnLayer, QueryTriggerInteraction.Ignore);
-        if (hits.Length == 0)
+        // 플레이어 루트 기준이 더 안전
+        Vector3 center = transform.position;
+
+        // 트리거도 포함하도록 Collide 사용
+        Collider[] hits = Physics.OverlapSphere(center, lockOnRadius, lockOnLayer, QueryTriggerInteraction.Collide);
+
+        if (hits == null || hits.Length == 0)
         {
             isLockedOn = false;
             lockOnTarget = null;
             return;
         }
 
-        // 카메라 전방에 가까운 타겟 우선
         Transform best = null;
         float bestScore = float.MaxValue;
         Vector3 camFwd = CameraArm.forward;
 
         foreach (var h in hits)
         {
-            Transform t = h.transform;
-            if (t == this.transform) continue;
+            if (h == null) continue;
 
-            Vector3 to = t.position - cameraTransform.position;
+            // 적 루트 트랜스폼(가능하면 Rigidbody 기준)
+            Transform candidate =
+                h.attachedRigidbody != null ? h.attachedRigidbody.transform :
+                (h.transform.root != null ? h.transform.root : h.transform);
+
+            if (candidate == transform) continue; // 자기 자신 제외
+
+            Vector3 to = candidate.position - cameraTransform.position;
             float dist = to.magnitude;
             float angle = Vector3.Angle(camFwd, to);
-            float score = dist + angle * 0.1f; // 가중치는 취향대로
+
+            // 가까움 + 시야 정면일수록 가산점
+            float score = dist + angle * 0.1f;
+
             if (score < bestScore)
             {
                 bestScore = score;
-                best = t;
+                best = candidate;
             }
         }
 
@@ -227,6 +248,40 @@ public class PlayerController : MonoBehaviour
     {
         return isDodging || isParrying;
     }
+    private void ClearDirectionalBools()
+    {
+        animator.SetBool("isLeft", false);
+        animator.SetBool("isRight", false);
+        animator.SetBool("isBack", false);
+    }
+    private void UpdateLockOnDirectionalAnim(Vector3 moveDir)
+    {
+        // 록온이 아니거나, 이동 불가/정지면 모두 끔
+        if (!isLockedOn || lockOnTarget == null || !isMovingEnabled || moveDir.sqrMagnitude < 0.0001f)
+        {
+            ClearDirectionalBools();
+            return;
+        }
+
+        // 캐릭터 기준 축
+        Vector3 fwd = CharacterBody.forward; fwd.y = 0f; fwd.Normalize();
+        Vector3 right = CharacterBody.right; right.y = 0f; right.Normalize();
+
+        float f = Vector3.Dot(moveDir, fwd);    // +면 전진, -면 후진
+        float r = Vector3.Dot(moveDir, right);  // +면 오른쪽, -면 왼쪽
+
+        // 지배 축(전후 vs 좌우) 선택
+        bool useForwardBack = Mathf.Abs(f) >= Mathf.Abs(r);
+
+        bool goBack = useForwardBack && (f < -lockOnDirectionDeadzone);
+        bool goLeft = !useForwardBack && (r < -lockOnDirectionDeadzone);
+        bool goRight = !useForwardBack && (r > lockOnDirectionDeadzone);
+
+        // forward(전진)일 때는 세 개 다 꺼둡니다. (전진은 isWalk/isRun으로 처리)
+        animator.SetBool("isBack", goBack);
+        animator.SetBool("isLeft", goLeft);
+        animator.SetBool("isRight", goRight);
+    }
     private void UpdateMovement()
     {
         if (!isMovingEnabled)
@@ -234,6 +289,7 @@ public class PlayerController : MonoBehaviour
             isMoving = false;
             animator.SetBool("isWalk", false);
             animator.SetBool("isRun", false);
+            ClearDirectionalBools(); // 추가
             return;
         }
 
@@ -242,21 +298,56 @@ public class PlayerController : MonoBehaviour
         bool running = isMoving && Input.GetKey(KeyCode.LeftShift);
 
         animator.SetBool("isWalk", isMoving && !running);
-        animator.SetBool("isRun", isMoving && Input.GetKey(KeyCode.LeftShift));
+        animator.SetBool("isRun", isMoving && running);
 
         if (isMoving)
         {
             Vector3 moveDir = GetMoveDirection();
             float speed = running ? runSpeed : walkSpeed;
-            transform.position += moveDir * Time.deltaTime * speed;
 
+            // 이동
+            transform.position += moveDir * Time.fixedDeltaTime * speed;
+
+            // 회전
             if (!isAttacking)
             {
-                Vector3 look = new Vector3(moveDir.x, 0f, moveDir.z);
-                if (look.sqrMagnitude > 0.0001f)
+                if (isLockedOn && lockOnTarget != null)
                 {
-                    Quaternion t = Quaternion.LookRotation(look);
-                    CharacterBody.rotation = Quaternion.Slerp(CharacterBody.rotation, t, 12f * Time.deltaTime);
+                    Vector3 to = lockOnTarget.position - CharacterBody.position;
+                    to.y = 0f;
+                    if (to.sqrMagnitude > 0.001f)
+                    {
+                        Quaternion t = Quaternion.LookRotation(to);
+                        CharacterBody.rotation = Quaternion.Slerp(CharacterBody.rotation, t, turnSpeed * Time.fixedDeltaTime);
+                    }
+                }
+                else
+                {
+                    Vector3 look = new Vector3(moveDir.x, 0f, moveDir.z);
+                    if (look.sqrMagnitude > 0.0001f)
+                    {
+                        Quaternion t = Quaternion.LookRotation(look);
+                        CharacterBody.rotation = Quaternion.Slerp(CharacterBody.rotation, t, turnSpeed * Time.fixedDeltaTime);
+                    }
+                }
+            }
+
+            // 록온 전용 방향 애니메이션 플래그 갱신
+            UpdateLockOnDirectionalAnim(moveDir);
+        }
+        else
+        {
+            // 정지: 록온이면 타겟만 바라보게, 방향 플래그는 모두 끔
+            ClearDirectionalBools(); // 추가
+
+            if (isLockedOn && lockOnTarget != null && !isAttacking)
+            {
+                Vector3 to = lockOnTarget.position - CharacterBody.position;
+                to.y = 0f;
+                if (to.sqrMagnitude > 0.001f)
+                {
+                    Quaternion t = Quaternion.LookRotation(to);
+                    CharacterBody.rotation = Quaternion.Slerp(CharacterBody.rotation, t, turnSpeed * Time.fixedDeltaTime);
                 }
             }
         }
