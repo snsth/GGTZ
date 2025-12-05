@@ -3250,6 +3250,42 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d20e1df606c9c3845a3535acb1143c89, type: 3}
+--- !u!1 &253817457 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 444dbf2e17af0204f825845209fc2dea, type: 3}
+  m_PrefabInstance: {fileID: 1850758709}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &253817461
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 253817457}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6217e054eac185b4b8fc1161813df65e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  damage: 10
+  hitbox: {fileID: 253817462}
+  targetLayers:
+    serializedVersion: 2
+    m_Bits: 128
+  owner: {fileID: 2118989922}
+--- !u!65 &253817462
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 253817457}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 0.05807348, y: 0.014374854, z: 0.12831572}
+  m_Center: {x: 0.000000009722962, y: 0.0017034151, z: 0.000007650513}
 --- !u!4 &259527744 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4886621408035474, guid: d20e1df606c9c3845a3535acb1143c89, type: 3}
@@ -22711,12 +22747,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   CharacterBody: {fileID: 2118989922}
   CameraArm: {fileID: 1531388291}
+  cameraTransform: {fileID: 963194228}
+  combat: {fileID: 2118989930}
   lockOnKey: 113
   lockOnRadius: 15
   lockOnLayer:
     serializedVersion: 2
     m_Bits: 128
-  cameraTransform: {fileID: 0}
+  lockOnDirectionDeadzone: 0.2
   cameraTargetDistance: 4.5
   cameraMinDistance: 1
   cameraMaxDistance: 6
@@ -22724,23 +22762,15 @@ MonoBehaviour:
   cameraCollisionRadius: 0.25
   cameraCollisionMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 1
   yawSmoothTime: 0.03
   pitchSmoothTime: 0.03
   distSmoothTime: 0.05
   turnSpeed: 12
-  lockOnDirectionDeadzone: 0.2
   walkSpeed: 2
   runSpeed: 5
   jumpPower: 5
   sensitivity: 2
-  dodgeCooldown: 1
-  dodgeForce: 5
-  parryDuration: 0.5
-  parryCooldown: 2
-  comboInterval: 1
-  accel: 20
-  decel: 25
   minPitch: -40
   maxPitch: 60
 --- !u!95 &2118989929
@@ -22764,6 +22794,32 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &2118989930
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2118989921}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f39a5c98ac2bd244985ceb29271995a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  animator: {fileID: 2118989929}
+  rigid: {fileID: 2118989926}
+  characterBody: {fileID: 2118989922}
+  cameraArm: {fileID: 1531388291}
+  weapon: {fileID: 253817461}
+  attackDuration: 0.8
+  hitboxOpenDelay: 0.1
+  hitboxActiveTime: 0.3
+  useAnimEvents: 1
+  comboInterval: 1
+  dodgeCooldown: 1
+  dodgeForce: 10
+  parryDuration: 0.5
+  parryCooldown: 2
 --- !u!1001 &2121854755
 PrefabInstance:
   m_ObjectHideFlags: 0
