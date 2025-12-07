@@ -3,191 +3,190 @@ using UnityEngine;
 
 public class PlayerCombat : MonoBehaviour
 {
-    [Header("Refs")]
-    public Animator animator;
-    public Rigidbody rigid;
-    public Transform characterBody;
-    public Transform cameraArm;
-    public WeaponHitbox weapon;
+[Header("Refs")]
+public Animator animator;
+public Rigidbody rigid;
+public Transform characterBody;
+public Transform cameraArm;
+public WeaponHitbox weapon;
 
-    [Header("Attack")]
-    public float attackDuration = 0.8f;   // 기존 필드 유지(이벤트 미사용 대비)
-    public float hitboxOpenDelay = 0.1f;  // "
-    public float hitboxActiveTime = 0.3f; // "
-    public bool useAnimEvents = true;
-    public float comboInterval = 1f;      // 기존 필드(미사용 가능)
+[Header("Attack")]
+public float attackDuration = 0.8f;     // 애니 이벤트가 없을 때 폴백
+public bool useAnimEvents = true;       // 클립 이벤트(Open/Close, Finished) 권장
+public float minTimeBetweenAttacks = 0.05f; // 입력 디바운스
+public float comboInterval = 1.0f;      // 다음 입력이 이 시간 내면 2/3타
 
-    [Header("Dodge/Parry")]
-    public float dodgeCooldown = 1f;
-    public float dodgeForce = 10f;
-    public float parryDuration = 0.5f;
-    public float parryCooldown = 2f;
+[Header("Dodge/Parry")]
+public float dodgeCooldown = 1f;
+public float dodgeForce = 10f;
+public float parryDuration = 0.5f;
+public float parryCooldown = 2f;
 
-    public bool IsAttacking { get; private set; }
-    public bool IsDodging { get; private set; }
-    public bool IsParrying { get; private set; }
-    public bool IsBusy => IsAttacking || IsDodging || IsParrying;
+[Header("Animator States")]
+public string attack1State = "Attack_1";
+public string attack2State = "Attack_2";
+public string attack3State = "Attack_3";
+public bool useFullPath = false;        // 서브스테이트면 true로 바꾸고 "Base Layer.Combo.Attack_1" 등 사용
+public float crossFadeDuration = 0.05f;
 
-    // 기존 comboCount/comboTimer는 사용 안 함
-    // private int comboCount = 0;
-    // private float comboTimer = 0f;
+// 상태
+public bool IsAttacking { get; private set; }
+public bool IsDodging  { get; private set; }
+public bool IsParrying { get; private set; }
+public bool IsBusy => IsAttacking || IsDodging || IsParrying;
 
-    private int currentCombo = 0;           // 0=비공격, 1~3 = 현재 단계
-    private const int maxCombo = 3;
-    private bool canQueueNext = false;      // 콤보 입력 가능한 창
-    private bool buffered = false;          // 창 밖에서 누른 입력 버퍼
-    private float bufferExpire = 0f;
-    public float comboBufferTime = 0.25f;   // 입력 버퍼 유지시간
+private int currentCombo = 0;           // 0=비공격, 1~3=현재 단계
+private const int maxCombo = 3;
+private float nextAttackTime = 0f;      // 디바운스용
+private float comboTimer = 0f;          // 콤보 유지 타이머
 
-    private float nextDodgeTime = 0f;
-    private float nextParryTime = 0f;
-    private Transform lockOnTarget;
+private float nextDodgeTime = 0f;
+private float nextParryTime = 0f;
+private Transform lockOnTarget;
 
-    public void SetLockOnTarget(Transform target) => lockOnTarget = target;
+// 해시
+private int attack1Hash, attack2Hash, attack3Hash;
+private const int baseLayer = 0;
 
-    void Update()
+void Awake()
+{
+    attack1Hash = Animator.StringToHash(useFullPath ? $"Base Layer.{attack1State}" : attack1State);
+    attack2Hash = Animator.StringToHash(useFullPath ? $"Base Layer.{attack2State}" : attack2State);
+    attack3Hash = Animator.StringToHash(useFullPath ? $"Base Layer.{attack3State}" : attack3State);
+}
+
+void Update()
+{
+    // 콤보 유지시간(공격 종료 후에만 카운트)
+    if (currentCombo > 0 && !IsAttacking)
     {
-        // 입력 버퍼 만료
-        if (buffered && Time.time > bufferExpire)
-            buffered = false;
-
-        // 콤보 창이 열렸고, 버퍼가 존재하면 즉시 소비
-        if (IsAttacking && canQueueNext && buffered && currentCombo < maxCombo)
+        comboTimer += Time.deltaTime;
+        if (comboTimer >= comboInterval)
         {
-            buffered = false;
-            QueueNextCombo();
+            currentCombo = 0;
+            comboTimer = 0f;
+            animator.SetInteger("AttackCount", 0); // 디버그/모니터용
         }
     }
+}
 
-    public void TryAttack()
+public void SetLockOnTarget(Transform target) => lockOnTarget = target;
+
+// 컨트롤러에서 호출
+public void TryAttack()
+{
+    if (IsBusy) return;
+    if (Time.time < nextAttackTime) return;
+
+    // 단계 결정: 이전 타 끝난 뒤 comboInterval 내라면 2/3타, 아니면 1타
+    if (currentCombo == 0 || comboTimer >= comboInterval) currentCombo = 1;
+    else currentCombo = Mathf.Min(currentCombo + 1, maxCombo);
+
+    comboTimer = 0f;
+    StartAttackStage(currentCombo);
+    nextAttackTime = Time.time + minTimeBetweenAttacks;
+}
+
+private void StartAttackStage(int stage)
+{
+    IsAttacking = true;
+    animator.applyRootMotion = true;
+
+    // 그래프가 OnWeaponAttack 하나만 걸려 있어도, 어떤 상태로 갈지는 코드가 확정
+    animator.ResetTrigger("OnWeaponAttack");
+    animator.SetTrigger("OnWeaponAttack");
+    animator.SetInteger("AttackCount", stage); // 디버그/모니터용
+
+    int hash = stage == 1 ? attack1Hash : stage == 2 ? attack2Hash : attack3Hash;
+    animator.CrossFadeInFixedTime(hash, crossFadeDuration, baseLayer, 0f);
+
+    if (!useAnimEvents)
+        StartCoroutine(Fallback_EndAfter(attackDuration));
+}
+
+private IEnumerator Fallback_EndAfter(float t)
+{
+    yield return new WaitForSeconds(t);
+    Anim_AttackFinished();
+}
+
+public void TryDodge()
+{
+    if (IsBusy) return;
+    if (Time.time < nextDodgeTime) return;
+
+    animator.SetTrigger("doDodge");
+    Vector3 dir = GetDodgeDirection();
+    rigid.AddForce(dir * dodgeForce, ForceMode.Impulse);
+
+    IsDodging = true;
+    nextDodgeTime = Time.time + dodgeCooldown;
+    StartCoroutine(EndDodgeAfter(0.85f));
+}
+
+private IEnumerator EndDodgeAfter(float t)
+{
+    yield return new WaitForSeconds(t);
+    IsDodging = false;
+    rigid.velocity = Vector3.zero;
+    rigid.angularVelocity = Vector3.zero;
+}
+
+public void TryParry(bool isMoving)
+{
+    if (IsBusy) return;
+    if (Time.time < nextParryTime) return;
+    if (isMoving || currentCombo > 0) return;
+
+    animator.SetTrigger("doParry");
+    IsParrying = true;
+    nextParryTime = Time.time + parryCooldown;
+    StartCoroutine(EndParryAfter(parryDuration));
+}
+
+private IEnumerator EndParryAfter(float t)
+{
+    yield return new WaitForSeconds(t);
+    IsParrying = false;
+}
+
+// 애니메이션 이벤트(각 Attack_n 클립에 배치)
+public void Anim_OpenHitbox() => weapon?.Open();
+public void Anim_CloseHitbox() => weapon?.Close();
+
+// Attack_n의 거의 마지막 프레임(Idle 복귀 직전)
+public void Anim_AttackFinished()
+{
+    animator.applyRootMotion = false;
+    IsAttacking = false;
+
+    // 마지막 타면 즉시 리셋, 아니면 콤보 유지시간 내 2/3타 대기
+    if (currentCombo >= maxCombo) currentCombo = 0;
+
+    animator.ResetTrigger("OnWeaponAttack");
+}
+
+private Vector3 GetDodgeDirection()
+{
+    Vector2 input = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
+    if (input.sqrMagnitude < 0.0001f)
     {
-        // 공격 중에도 입력을 받되, 회피/패링만 제한
-        if (IsDodging || IsParrying) return;
-
-        if (!IsAttacking)
-        {
-            // 첫 타 시작
-            currentCombo = 1;
-            animator.applyRootMotion = true;
-            animator.SetInteger("AttackCount", currentCombo);
-            animator.SetTrigger("OnWeaponAttack");
-            IsAttacking = true;
-
-            if (!useAnimEvents)
-                StartCoroutine(AttackRoutine_Timed()); // 히트박스만 시간으로 열고 닫는 경우
-                                                       // AttackEndAfter 코루틴은 더 이상 사용하지 않음(클립 끝 이벤트로 종료)
-        }
-        else
-        {
-            // 공격 진행 중: 콤보 입력
-            if (canQueueNext && currentCombo < maxCombo)
-            {
-                QueueNextCombo(); // 창이 열려있으면 즉시 큐
-            }
-            else
-            {
-                // 창이 닫혀 있으면 버퍼
-                buffered = true;
-                bufferExpire = Time.time + comboBufferTime;
-            }
-        }
+        Vector3 back = -characterBody.forward;
+        back.y = 0f;
+        return back.normalized;
     }
 
-    private void QueueNextCombo()
+    Vector3 forward, right;
+    if (lockOnTarget != null)
     {
-        currentCombo = Mathf.Min(currentCombo + 1, maxCombo);
-        animator.SetInteger("AttackCount", currentCombo);
-        // Attack_1/2의 Exit Time에 도달하면 AttackCount 조건에 의해 다음 상태로 전이됨
+        forward = new Vector3(characterBody.forward.x, 0f, characterBody.forward.z).normalized;
+        right = new Vector3(characterBody.right.x, 0f, characterBody.right.z).normalized;
     }
-
-    private IEnumerator AttackRoutine_Timed()
+    else
     {
-        yield return new WaitForSeconds(hitboxOpenDelay);
-        weapon?.Open();
-        yield return new WaitForSeconds(hitboxActiveTime);
-        weapon?.Close();
+        forward = new Vector3(cameraArm.forward.x, 0f, cameraArm.forward.z).normalized;
+        right = new Vector3(cameraArm.right.x, 0f, cameraArm.right.z).normalized;
     }
-
-    // AttackEndAfter(float t) 는 더 이상 호출하지 않음
-    // private IEnumerator AttackEndAfter(float t) { ... }  → 사용 중지하거나 삭제
-
-    public void TryDodge()
-    {
-        if (IsBusy || Time.time < nextDodgeTime) return;
-
-        animator.SetTrigger("doDodge");
-        Vector3 dir = GetDodgeDirection();
-        rigid.AddForce(dir * dodgeForce, ForceMode.Impulse);
-
-        nextDodgeTime = Time.time + dodgeCooldown;
-        IsDodging = true;
-        StartCoroutine(EndDodgeAfter(0.85f));
-    }
-
-    private IEnumerator EndDodgeAfter(float t)
-    {
-        yield return new WaitForSeconds(t);
-        IsDodging = false;
-        rigid.velocity = Vector3.zero;
-        rigid.angularVelocity = Vector3.zero;
-    }
-
-    public void TryParry(bool isMoving)
-    {
-        if (IsBusy || Time.time < nextParryTime) return;
-        if (isMoving || currentCombo > 0) return;
-
-        animator.SetTrigger("doParry");
-        nextParryTime = Time.time + parryCooldown;
-        IsParrying = true;
-        StartCoroutine(EndParryAfter(parryDuration));
-    }
-
-    private IEnumerator EndParryAfter(float t)
-    {
-        yield return new WaitForSeconds(t);
-        IsParrying = false;
-    }
-
-    // 애니메이션 이벤트용
-    public void Anim_OpenHitbox() => weapon?.Open();
-    public void Anim_CloseHitbox() => weapon?.Close();
-
-    // 콤보 창 열고/닫기(각 클립의 알맞은 구간에 배치)
-    public void Anim_ComboWindowOpen() => canQueueNext = true;
-    public void Anim_ComboWindowClose() => canQueueNext = false;
-
-    // 각 Attack_n의 거의 마지막 프레임(전이 시점보다 뒤)에서 호출
-    public void Anim_AttackFinished()
-    {
-        // 연결이 되지 않았을 때만 이 이벤트가 실행됨(전이되면 호출되지 않음)
-        animator.applyRootMotion = false;
-        IsAttacking = false;
-        currentCombo = 0;
-        canQueueNext = false;
-        buffered = false;
-        animator.SetInteger("AttackCount", 0);
-    }
-
-    private Vector3 GetDodgeDirection()
-    {
-        Vector2 input = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
-        if (input.sqrMagnitude < 0.0001f)
-            return -new Vector3(characterBody.forward.x, 0f, characterBody.forward.z).normalized;
-
-        Vector3 forward;
-        Vector3 right;
-
-        if (lockOnTarget != null)
-        {
-            forward = new Vector3(characterBody.forward.x, 0f, characterBody.forward.z).normalized;
-            right = new Vector3(characterBody.right.x, 0f, characterBody.right.z).normalized;
-        }
-        else
-        {
-            forward = new Vector3(cameraArm.forward.x, 0f, cameraArm.forward.z).normalized;
-            right = new Vector3(cameraArm.right.x, 0f, cameraArm.right.z).normalized;
-        }
-        return (forward * input.y + right * input.x).normalized;
-    }
+    return (forward * input.y + right * input.x).normalized;
+}
 }
