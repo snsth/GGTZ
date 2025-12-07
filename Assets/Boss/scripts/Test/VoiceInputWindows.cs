@@ -13,13 +13,14 @@ public class VoiceInputWindows : MonoBehaviour
     public bool autoStart = true;
     public bool logDebug = true;
 
-    // 디버그용 상태/최근 결과
+    // 디버그용
     public string Status { get; private set; } = "Idle";
     public string LastText { get; private set; } = "";
     public string LastHypothesis { get; private set; } = "";
 
     public event Action<string> OnRecognized;
     public event Action<string> OnHypothesis;
+
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
     private DictationRecognizer dictation;
 #endif
@@ -81,8 +82,8 @@ public class VoiceInputWindows : MonoBehaviour
             Debug.LogWarning("[Voice] Start failed: " + e.Message);
         }
 #else
-Status = "Unsupported platform";
-Debug.LogWarning("[Voice] Windows 전용 기능입니다.");
+        Status = "Unsupported platform";
+        Debug.LogWarning("[Voice] Windows 전용 기능입니다.");
 #endif
     }
 

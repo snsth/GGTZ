@@ -19,7 +19,7 @@ public class BossAnimatorBridge : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         agent = GetComponent<NavMeshAgent>();
 
-        if (rb) rb.isKinematic = true; // 루트모션 이동은 키네마틱으로
+        if (rb) rb.isKinematic = true;
     }
 
     void OnAnimatorMove()

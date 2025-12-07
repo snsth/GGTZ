@@ -7,67 +7,65 @@ using UnityEngine;
 [RequireComponent(typeof(Animator))]
 public class BossAttackSelector : MonoBehaviour
 {
-[Header("Attacks")]
-public List<AttackOption> attacks = new List<AttackOption>();
-public float attackDecisionInterval = 0.2f;
+    [Header("Attacks")]
+    public List<AttackOption> attacks = new List<AttackOption>();
+    public float attackDecisionInterval = 0.2f;
 
-private float decisionTimer = 0f;
-private BossLOS los; // 선택(있으면 사용)
+    private float decisionTimer = 0f;
+    private BossLOS los;
 
-void Awake()
-{
-    los = GetComponent<BossLOS>(); // 없으면 null
-}
-
-void Update()
-{
-    decisionTimer -= Time.deltaTime;
-}
-
-public AttackOption TrySelect(float distance, Transform player)
-{
-    if (decisionTimer > 0f) return null;
-    decisionTimer = attackDecisionInterval;
-
-    AttackOption best = null;
-    float bestScore = 0f;
-
-    foreach (var opt in attacks)
+    void Awake()
     {
-        if (!opt.IsInRange(distance)) continue;
-        if (!opt.IsOffCooldown()) continue;
-
-        if (los && los.useLOS && opt.requiresLOS)
-        {
-            if (!los.HasLineOfSight(player)) continue;
-        }
-
-        float score = opt.weight;
-
-        float norm = opt.NormalizedRange(distance);
-        score *= opt.distanceCurve.Evaluate(norm);
-
-        float facing = FacingFactor(player.position, opt.requiredFacingDot);
-        score *= facing;
-
-        score *= opt.CooldownFactor();
-
-        if (score > bestScore)
-        {
-            bestScore = score;
-            best = opt;
-        }
+        los = GetComponent<BossLOS>(); // 선택적
     }
 
-    return best;
-}
+    void Update()
+    {
+        decisionTimer -= Time.deltaTime;
+    }
 
-float FacingFactor(Vector3 targetPos, float requiredDot)
-{
-    // requiredDot: -1(무관) ~ 1(완전 정면)
-    Vector3 to = (targetPos - transform.position).normalized;
-    float dot = Vector3.Dot(transform.forward, to);
-    if (dot < requiredDot) return 0f;
-    return Mathf.InverseLerp(requiredDot, 1f, dot);
-}
+    public AttackOption TrySelect(float distance, Transform player)
+    {
+        if (decisionTimer > 0f) return null;
+        decisionTimer = attackDecisionInterval;
+
+        AttackOption best = null;
+        float bestScore = 0f;
+
+        foreach (var opt in attacks)
+        {
+            if (!opt.IsInRange(distance)) continue;
+            if (!opt.IsOffCooldown()) continue;
+
+            if (los && los.useLOS && opt.requiresLOS)
+            {
+                if (!los.HasLineOfSight(player)) continue;
+            }
+
+            float score = opt.weight;
+            float norm = opt.NormalizedRange(distance);
+            score *= opt.distanceCurve.Evaluate(norm);
+
+            float facing = FacingFactor(player.position, opt.requiredFacingDot);
+            score *= facing;
+
+            score *= opt.CooldownFactor();
+
+            if (score > bestScore)
+            {
+                bestScore = score;
+                best = opt;
+            }
+        }
+
+        return best;
+    }
+
+    float FacingFactor(Vector3 targetPos, float requiredDot)
+    {
+        Vector3 to = (targetPos - transform.position).normalized;
+        float dot = Vector3.Dot(transform.forward, to);
+        if (dot < requiredDot) return 0f;
+        return Mathf.InverseLerp(requiredDot, 1f, dot);
+    }
 }

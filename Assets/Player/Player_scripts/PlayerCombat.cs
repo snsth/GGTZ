@@ -11,11 +11,11 @@ public class PlayerCombat : MonoBehaviour
     public WeaponHitbox weapon;
 
     [Header("Attack")]
-    public float attackDuration = 0.8f;   // ±âÁ¸ ÇÊµå À¯Áö(ÀÌº¥Æ® ¹Ì»ç¿ë ´ëºñ)
+    public float attackDuration = 0.8f;   // ê¸°ì¡´ í•„ë“œ ìœ ì§€(ì´ë²¤íŠ¸ ë¯¸ì‚¬ìš© ëŒ€ë¹„)
     public float hitboxOpenDelay = 0.1f;  // "
     public float hitboxActiveTime = 0.3f; // "
     public bool useAnimEvents = true;
-    public float comboInterval = 1f;      // ±âÁ¸ ÇÊµå(¹Ì»ç¿ë °¡´É)
+    public float comboInterval = 1f;      // ê¸°ì¡´ í•„ë“œ(ë¯¸ì‚¬ìš© ê°€ëŠ¥)
 
     [Header("Dodge/Parry")]
     public float dodgeCooldown = 1f;
@@ -28,16 +28,16 @@ public class PlayerCombat : MonoBehaviour
     public bool IsParrying { get; private set; }
     public bool IsBusy => IsAttacking || IsDodging || IsParrying;
 
-    // ±âÁ¸ comboCount/comboTimer´Â »ç¿ë ¾È ÇÔ
+    // ê¸°ì¡´ comboCount/comboTimerëŠ” ì‚¬ìš© ì•ˆ í•¨
     // private int comboCount = 0;
     // private float comboTimer = 0f;
 
-    private int currentCombo = 0;           // 0=ºñ°ø°İ, 1~3 = ÇöÀç ´Ü°è
+    private int currentCombo = 0;           // 0=ë¹„ê³µê²©, 1~3 = í˜„ì¬ ë‹¨ê³„
     private const int maxCombo = 3;
-    private bool canQueueNext = false;      // ÄŞº¸ ÀÔ·Â °¡´ÉÇÑ Ã¢
-    private bool buffered = false;          // Ã¢ ¹Û¿¡¼­ ´©¸¥ ÀÔ·Â ¹öÆÛ
+    private bool canQueueNext = false;      // ì½¤ë³´ ì…ë ¥ ê°€ëŠ¥í•œ ì°½
+    private bool buffered = false;          // ì°½ ë°–ì—ì„œ ëˆ„ë¥¸ ì…ë ¥ ë²„í¼
     private float bufferExpire = 0f;
-    public float comboBufferTime = 0.25f;   // ÀÔ·Â ¹öÆÛ À¯Áö½Ã°£
+    public float comboBufferTime = 0.25f;   // ì…ë ¥ ë²„í¼ ìœ ì§€ì‹œê°„
 
     private float nextDodgeTime = 0f;
     private float nextParryTime = 0f;
@@ -47,11 +47,11 @@ public class PlayerCombat : MonoBehaviour
 
     void Update()
     {
-        // ÀÔ·Â ¹öÆÛ ¸¸·á
+        // ì…ë ¥ ë²„í¼ ë§Œë£Œ
         if (buffered && Time.time > bufferExpire)
             buffered = false;
 
-        // ÄŞº¸ Ã¢ÀÌ ¿­·È°í, ¹öÆÛ°¡ Á¸ÀçÇÏ¸é Áï½Ã ¼Òºñ
+        // ì½¤ë³´ ì°½ì´ ì—´ë ¸ê³ , ë²„í¼ê°€ ì¡´ì¬í•˜ë©´ ì¦‰ì‹œ ì†Œë¹„
         if (IsAttacking && canQueueNext && buffered && currentCombo < maxCombo)
         {
             buffered = false;
@@ -61,12 +61,12 @@ public class PlayerCombat : MonoBehaviour
 
     public void TryAttack()
     {
-        // °ø°İ Áß¿¡µµ ÀÔ·ÂÀ» ¹ŞµÇ, È¸ÇÇ/ÆĞ¸µ¸¸ Á¦ÇÑ
+        // ê³µê²© ì¤‘ì—ë„ ì…ë ¥ì„ ë°›ë˜, íšŒí”¼/íŒ¨ë§ë§Œ ì œí•œ
         if (IsDodging || IsParrying) return;
 
         if (!IsAttacking)
         {
-            // Ã¹ Å¸ ½ÃÀÛ
+            // ì²« íƒ€ ì‹œì‘
             currentCombo = 1;
             animator.applyRootMotion = true;
             animator.SetInteger("AttackCount", currentCombo);
@@ -74,19 +74,19 @@ public class PlayerCombat : MonoBehaviour
             IsAttacking = true;
 
             if (!useAnimEvents)
-                StartCoroutine(AttackRoutine_Timed()); // È÷Æ®¹Ú½º¸¸ ½Ã°£À¸·Î ¿­°í ´İ´Â °æ¿ì
-                                                       // AttackEndAfter ÄÚ·çÆ¾Àº ´õ ÀÌ»ó »ç¿ëÇÏÁö ¾ÊÀ½(Å¬¸³ ³¡ ÀÌº¥Æ®·Î Á¾·á)
+                StartCoroutine(AttackRoutine_Timed()); // íˆíŠ¸ë°•ìŠ¤ë§Œ ì‹œê°„ìœ¼ë¡œ ì—´ê³  ë‹«ëŠ” ê²½ìš°
+                                                       // AttackEndAfter ì½”ë£¨í‹´ì€ ë” ì´ìƒ ì‚¬ìš©í•˜ì§€ ì•ŠìŒ(í´ë¦½ ë ì´ë²¤íŠ¸ë¡œ ì¢…ë£Œ)
         }
         else
         {
-            // °ø°İ ÁøÇà Áß: ÄŞº¸ ÀÔ·Â
+            // ê³µê²© ì§„í–‰ ì¤‘: ì½¤ë³´ ì…ë ¥
             if (canQueueNext && currentCombo < maxCombo)
             {
-                QueueNextCombo(); // Ã¢ÀÌ ¿­·ÁÀÖÀ¸¸é Áï½Ã Å¥
+                QueueNextCombo(); // ì°½ì´ ì—´ë ¤ìˆìœ¼ë©´ ì¦‰ì‹œ í
             }
             else
             {
-                // Ã¢ÀÌ ´İÇô ÀÖÀ¸¸é ¹öÆÛ
+                // ì°½ì´ ë‹«í˜€ ìˆìœ¼ë©´ ë²„í¼
                 buffered = true;
                 bufferExpire = Time.time + comboBufferTime;
             }
@@ -97,7 +97,7 @@ public class PlayerCombat : MonoBehaviour
     {
         currentCombo = Mathf.Min(currentCombo + 1, maxCombo);
         animator.SetInteger("AttackCount", currentCombo);
-        // Attack_1/2ÀÇ Exit Time¿¡ µµ´ŞÇÏ¸é AttackCount Á¶°Ç¿¡ ÀÇÇØ ´ÙÀ½ »óÅÂ·Î ÀüÀÌµÊ
+        // Attack_1/2ì˜ Exit Timeì— ë„ë‹¬í•˜ë©´ AttackCount ì¡°ê±´ì— ì˜í•´ ë‹¤ìŒ ìƒíƒœë¡œ ì „ì´ë¨
     }
 
     private IEnumerator AttackRoutine_Timed()
@@ -108,8 +108,8 @@ public class PlayerCombat : MonoBehaviour
         weapon?.Close();
     }
 
-    // AttackEndAfter(float t) ´Â ´õ ÀÌ»ó È£ÃâÇÏÁö ¾ÊÀ½
-    // private IEnumerator AttackEndAfter(float t) { ... }  ¡æ »ç¿ë ÁßÁöÇÏ°Å³ª »èÁ¦
+    // AttackEndAfter(float t) ëŠ” ë” ì´ìƒ í˜¸ì¶œí•˜ì§€ ì•ŠìŒ
+    // private IEnumerator AttackEndAfter(float t) { ... }  â†’ ì‚¬ìš© ì¤‘ì§€í•˜ê±°ë‚˜ ì‚­ì œ
 
     public void TryDodge()
     {
@@ -149,18 +149,18 @@ public class PlayerCombat : MonoBehaviour
         IsParrying = false;
     }
 
-    // ¾Ö´Ï¸ŞÀÌ¼Ç ÀÌº¥Æ®¿ë
+    // ì• ë‹ˆë©”ì´ì…˜ ì´ë²¤íŠ¸ìš©
     public void Anim_OpenHitbox() => weapon?.Open();
     public void Anim_CloseHitbox() => weapon?.Close();
 
-    // ÄŞº¸ Ã¢ ¿­°í/´İ±â(°¢ Å¬¸³ÀÇ ¾Ë¸ÂÀº ±¸°£¿¡ ¹èÄ¡)
+    // ì½¤ë³´ ì°½ ì—´ê³ /ë‹«ê¸°(ê° í´ë¦½ì˜ ì•Œë§ì€ êµ¬ê°„ì— ë°°ì¹˜)
     public void Anim_ComboWindowOpen() => canQueueNext = true;
     public void Anim_ComboWindowClose() => canQueueNext = false;
 
-    // °¢ Attack_nÀÇ °ÅÀÇ ¸¶Áö¸· ÇÁ·¹ÀÓ(ÀüÀÌ ½ÃÁ¡º¸´Ù µÚ)¿¡¼­ È£Ãâ
+    // ê° Attack_nì˜ ê±°ì˜ ë§ˆì§€ë§‰ í”„ë ˆì„(ì „ì´ ì‹œì ë³´ë‹¤ ë’¤)ì—ì„œ í˜¸ì¶œ
     public void Anim_AttackFinished()
     {
-        // ¿¬°áÀÌ µÇÁö ¾Ê¾ÒÀ» ¶§¸¸ ÀÌ ÀÌº¥Æ®°¡ ½ÇÇàµÊ(ÀüÀÌµÇ¸é È£ÃâµÇÁö ¾ÊÀ½)
+        // ì—°ê²°ì´ ë˜ì§€ ì•Šì•˜ì„ ë•Œë§Œ ì´ ì´ë²¤íŠ¸ê°€ ì‹¤í–‰ë¨(ì „ì´ë˜ë©´ í˜¸ì¶œë˜ì§€ ì•ŠìŒ)
         animator.applyRootMotion = false;
         IsAttacking = false;
         currentCombo = 0;

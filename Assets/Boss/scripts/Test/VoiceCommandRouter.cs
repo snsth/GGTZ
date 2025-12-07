@@ -18,7 +18,7 @@ public class CommandKeywordSet
 {
     public VoiceAction action = VoiceAction.RollLeft;
     public List<string> keywords = new List<string>();
-    public float cooldown = 0.8f; // 연타 방지
+    public float cooldown = 0.8f;
 }
 
 [DisallowMultipleComponent]
@@ -26,39 +26,44 @@ public class CommandKeywordSet
 public class VoiceCommandRouter : MonoBehaviour
 {
     [Header("Dependencies")]
-    public BossRollAbility roll;    // 롤 실행 대상
+    public BossRollAbility roll;
 
     [Header("Fuzzy Matching")]
     [Range(0f, 1f)] public float fuzzyThreshold = 0.55f;
 
     [Header("Commands")]
     public List<CommandKeywordSet> commands = new List<CommandKeywordSet>()
-{
-    new CommandKeywordSet{
-        action = VoiceAction.RollLeft,
-        cooldown = 0.8f,
-        keywords = new List<string>{"왼쪽","왼","좌","레프트","left","왼쪽으로","왼다","왼구르기","왼굴러"}
-    },
-    new CommandKeywordSet{
-        action = VoiceAction.RollRight,
-        cooldown = 0.8f,
-        keywords = new List<string>{"오른쪽","오른","우","라이트","right","오른쪽으로","오다","오구르기","오굴러"}
-    },
-    new CommandKeywordSet{
-        action = VoiceAction.RollForward,
-        cooldown = 0.8f,
-        keywords = new List<string>{"앞","전진","앞으로","포워드","forward","앞구르기"}
-    },
-    new CommandKeywordSet{
-        action = VoiceAction.RollBack,
-        cooldown = 0.8f,
-        keywords = new List<string>{"뒤","후진","뒤로","백","back","뒤구르기"}
-    },
-};
+    {
+        new CommandKeywordSet{
+            action = VoiceAction.RollLeft,
+            cooldown = 0.8f,
+            keywords = new List<string>{"왼쪽","왼","좌","레프트","left","왼쪽으로","왼구르기","왼굴러","렝쪽","랭쪽"}
+        },
+        new CommandKeywordSet{
+            action = VoiceAction.RollRight,
+            cooldown = 0.8f,
+            keywords = new List<string>{"오른쪽","오른","우","라이트","right","오른쪽으로","오구르기","오굴러"}
+        },
+        new CommandKeywordSet{
+            action = VoiceAction.RollForward,
+            cooldown = 0.8f,
+            keywords = new List<string>{"앞","앞으로","전진","포워드","forward","앞구르기"}
+        },
+        new CommandKeywordSet{
+            action = VoiceAction.RollBack,
+            cooldown = 0.8f,
+            keywords = new List<string>{"뒤","뒤로","후진","백","back","뒤구르기"}
+        },
+    };
 
     [Header("Debug")]
-    public bool allowKeyboardTest = true; // Q왼 E오 R앞 T뒤 테스트
+    public bool allowKeyboardTest = true; // Q/E/R/T 테스트
     public bool logDebug = true;
+
+    // 디버그 표시용
+    public string LastRaw { get; private set; } = "";
+    public VoiceAction LastAction { get; private set; } = VoiceAction.None;
+    public float LastScore { get; private set; } = 0f;
 
     private VoiceInputWindows voice;
     private Dictionary<VoiceAction, float> lastUsed = new Dictionary<VoiceAction, float>();
@@ -87,6 +92,7 @@ public class VoiceCommandRouter : MonoBehaviour
     void HandleRecognized(string raw)
     {
         if (string.IsNullOrWhiteSpace(raw)) return;
+        LastRaw = raw;
 
         string input = Normalize(raw);
         CommandKeywordSet best = null;
@@ -106,16 +112,21 @@ public class VoiceCommandRouter : MonoBehaviour
                     best = set;
                 }
             }
+            if (bestScore >= 1f) break;
         }
 
         if (best != null && bestScore >= fuzzyThreshold)
         {
-            if (logDebug) Debug.Log($"[Voice] {best.action} matched score={bestScore:0.00}");
+            LastAction = best.action;
+            LastScore = bestScore;
+            if (logDebug) Debug.Log($"[VoiceMatch] {best.action} score={bestScore:0.00} from '{raw}'");
             Trigger(best.action, best.cooldown);
         }
         else
         {
-            if (logDebug) Debug.Log($"[Voice] no match: {raw} (best {bestScore:0.00})");
+            LastAction = VoiceAction.None;
+            LastScore = bestScore;
+            if (logDebug) Debug.Log($"[VoiceMatch] no match for '{raw}' (best={bestScore:0.00})");
         }
     }
 
