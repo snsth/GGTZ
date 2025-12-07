@@ -534,7 +534,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 4
+  m_RootOrder: 8
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &78875369
 GameObject:
@@ -1399,7 +1399,7 @@ GameObject:
   - component: {fileID: 181741729}
   m_Layer: 0
   m_Name: blue dungeon
-  m_TagString: Untagged
+  m_TagString: Ground
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1420,7 +1420,7 @@ Transform:
   - {fileID: 1676887118}
   - {fileID: 464212115}
   m_Father: {fileID: 0}
-  m_RootOrder: 8
+  m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &186762487
 GameObject:
@@ -2397,7 +2397,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 0.5
-  m_Speed: 3
+  m_Speed: 2
   m_Acceleration: 12
   avoidancePriority: 50
   m_AngularSpeed: 0
@@ -2493,42 +2493,26 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   roll: {fileID: 342008655}
+  jump: {fileID: 342008663}
+  manualAttack: {fileID: 342008662}
   fuzzyThreshold: 1
   commands:
+  - action: 5
+    keywords:
+    - jump
+    - job
+    cooldown: 0.8
+  - action: 6
+    keywords:
+    - attack
+    - opec
+    - OK
+    cooldown: 0.8
+  - action: 7
+    keywords:
+    - punch
+    cooldown: 0.8
   - action: 1
-    keywords:
-    - "\uC67C\uCABD"
-    - "\uC67C"
-    - "\uC88C"
-    - "\uB808\uD504\uD2B8"
-    - left
-    - "\uC67C\uCABD\uC73C\uB85C"
-    - "\uC67C\uB2E4"
-    - "\uC67C\uAD6C\uB974\uAE30"
-    - "\uC67C\uAD74\uB7EC"
-    cooldown: 0.8
-  - action: 2
-    keywords:
-    - "\uC624\uB978\uCABD"
-    - "\uC624\uB978"
-    - "\uC6B0"
-    - "\uB77C\uC774\uD2B8"
-    - right
-    - "\uC624\uB978\uCABD\uC73C\uB85C"
-    - "\uC624\uB2E4"
-    - "\uC624\uAD6C\uB974\uAE30"
-    - "\uC624\uAD74\uB7EC"
-    cooldown: 0.8
-  - action: 3
-    keywords:
-    - "\uC55E"
-    - "\uC804\uC9C4"
-    - "\uC55E\uC73C\uB85C"
-    - "\uD3EC\uC6CC\uB4DC"
-    - forward
-    - "\uC55E\uAD6C\uB974\uAE30"
-    cooldown: 0.8
-  - action: 4
     keywords:
     - "\uB4A4"
     - "\uD6C4\uC9C4"
@@ -2552,7 +2536,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   autoStart: 1
+  autoRestart: 1
+  restartDelay: 0.35
+  setRunInBackground: 1
   logDebug: 1
+  enableWatchdog: 1
+  watchdogInterval: 3
 --- !u!114 &342008655
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2608,6 +2597,43 @@ MonoBehaviour:
   toggleKey: 282
   visible: 1
   fontSize: 14
+--- !u!114 &342008662
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 342008632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4ee754880038b2479ac1f91cba900f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  attackTrigger: Voice_Attack
+  punchTrigger: Voice_Punch
+  fallbackDuration: 0.9
+  logDebug: 1
+--- !u!114 &342008663
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 342008632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d293ef91d39ff7b42b956a276c564c5f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  jumpTrigger: Jump
+  jumpForce: 5
+  gravity: 20
+  maxAirTime: 1.5
+  obstacleMask:
+    serializedVersion: 2
+    m_Bits: 0
+  skinWidth: 0.05
+  logDebug: 1
 --- !u!1 &355810401
 GameObject:
   m_ObjectHideFlags: 0
@@ -7598,7 +7624,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 7
+  m_RootOrder: 6
   m_LocalEulerAnglesHint: {x: 25.961, y: 0, z: 0}
 --- !u!1 &391661547
 GameObject:
@@ -9829,7 +9855,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 6
+  m_RootOrder: 7
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &608900636
 GameObject:
@@ -21573,7 +21599,7 @@ RectTransform:
   - {fileID: 608900637}
   - {fileID: 156168775}
   m_Father: {fileID: 0}
-  m_RootOrder: 5
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
