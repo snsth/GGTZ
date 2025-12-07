@@ -2598,7 +2598,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 342008632}
   m_Enabled: 1
   m_EditorHideFlags: 0
-<<<<<<< HEAD
+
   m_Script: {fileID: 11500000, guid: 0b21475f80fc65a4698f1b5df0ab6a1c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
@@ -2609,15 +2609,6 @@ MonoBehaviour:
   toggleKey: 282
   visible: 1
   fontSize: 14
-=======
-  m_Script: {fileID: 11500000, guid: bd4573c5f14c50741884aff94a87b104, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxHP: 100
-  hitCooldown: 0.5
-  hpSlider: {fileID: 1741513949}
-  destroyOnDeath: 1
->>>>>>> e308a030dc771dbf5e17a67e8e92b260f342a5de
 --- !u!1 &355810401
 GameObject:
   m_ObjectHideFlags: 0
