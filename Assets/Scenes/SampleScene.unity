@@ -2366,11 +2366,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 299972882}
   m_CullTransparentMesh: 1
---- !u!4 &341512131 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 5130885308440652683, guid: ac44af99dbed3e74f8b46f21d2d095ee, type: 3}
-  m_PrefabInstance: {fileID: 2040834684564621252}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &342008632 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7106612736965536737, guid: ac44af99dbed3e74f8b46f21d2d095ee, type: 3}
@@ -2414,69 +2409,6 @@ NavMeshAgent:
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
---- !u!114 &342008644
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 342008632}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1da792d685105e942b2ea8b2ee931ab3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  player: {fileID: 2118989922}
-  eye: {fileID: 341512131}
-  agent: {fileID: 342008643}
-  animator: {fileID: 342008646}
-  rb: {fileID: 342008638}
-  maxTurnSpeedDeg: 540
-  farEnter: 8
-  midEnter: 4
-  hysteresis: 0.5
-  desiredMidRadius: 5
-  strafeSwitchInterval: 3
-  useLOS: 0
-  losBlockMask:
-    serializedVersion: 2
-    m_Bits: 0
-  losMaxDistance: 40
-  attacks:
-  - name: Jump Attack
-    animatorTrigger: Jump Attack
-    minRange: 0
-    maxRange: 0
-    cooldown: 15
-    weight: 1
-    distanceCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 1
-        outSlope: 1
-        tangentMode: 34
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 1
-        outSlope: 1
-        tangentMode: 34
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 0
-    requiresLOS: 0
-    requiredFacingDot: 0
-    lastUsedTime: 0
-  attackDecisionInterval: 0.2
 --- !u!136 &342008645
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -2491,11 +2423,172 @@ CapsuleCollider:
   m_Height: 2.84
   m_Direction: 1
   m_Center: {x: 0, y: 1.42, z: 0}
---- !u!95 &342008646 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 4554334227605580577, guid: ac44af99dbed3e74f8b46f21d2d095ee, type: 3}
-  m_PrefabInstance: {fileID: 2040834684564621252}
+--- !u!114 &342008648
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 342008632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b092a6b26a358f4c8cbf0ac79fd1919, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  player: {fileID: 2118989922}
+--- !u!114 &342008649
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 342008632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a62ae419c0cc6a24faad5224ff837d12, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &342008650
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 342008632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0cedfc2d1aaa354f9710239f9046a44, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  attacks: []
+  attackDecisionInterval: 0.2
+--- !u!114 &342008651
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 342008632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3daadab1ab7def4fb18d237a682cd10, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxTurnSpeedDeg: 360
+  farEnter: 8
+  midEnter: 4
+  hysteresis: 0.5
+  desiredMidRadius: 5
+  strafeSwitchInterval: 3
+--- !u!114 &342008653
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 342008632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf208aa10ae94b04bba0267f530a176e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  roll: {fileID: 342008655}
+  fuzzyThreshold: 0.55
+  commands:
+  - action: 1
+    keywords:
+    - "\uC67C\uCABD"
+    - "\uC67C"
+    - "\uC88C"
+    - "\uB808\uD504\uD2B8"
+    - left
+    - "\uC67C\uCABD\uC73C\uB85C"
+    - "\uC67C\uB2E4"
+    - "\uC67C\uAD6C\uB974\uAE30"
+    - "\uC67C\uAD74\uB7EC"
+    cooldown: 0.8
+  - action: 2
+    keywords:
+    - "\uC624\uB978\uCABD"
+    - "\uC624\uB978"
+    - "\uC6B0"
+    - "\uB77C\uC774\uD2B8"
+    - right
+    - "\uC624\uB978\uCABD\uC73C\uB85C"
+    - "\uC624\uB2E4"
+    - "\uC624\uAD6C\uB974\uAE30"
+    - "\uC624\uAD74\uB7EC"
+    cooldown: 0.8
+  - action: 3
+    keywords:
+    - "\uC55E"
+    - "\uC804\uC9C4"
+    - "\uC55E\uC73C\uB85C"
+    - "\uD3EC\uC6CC\uB4DC"
+    - forward
+    - "\uC55E\uAD6C\uB974\uAE30"
+    cooldown: 0.8
+  - action: 4
+    keywords:
+    - "\uB4A4"
+    - "\uD6C4\uC9C4"
+    - "\uB4A4\uB85C"
+    - "\uBC31"
+    - back
+    - "\uB4A4\uAD6C\uB974\uAE30"
+    cooldown: 0.8
+  allowKeyboardTest: 1
+  logDebug: 1
+--- !u!114 &342008654
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 342008632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a46b6741c69adbe4c82294ec7c041d09, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  autoStart: 1
+  logDebug: 1
+--- !u!114 &342008655
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 342008632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 839173225317ede4c83d5d8a88dcf892, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rollLeftTrigger: Roll_Left
+  rollRightTrigger: Roll_Right
+  rollForwardTrigger: Roll_Forward
+  rollBackTrigger: Roll_Back
+  fallbackDuration: 0.9
+  logDebug: 1
+--- !u!114 &342008656
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 342008632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 922d38e683be4a444863bd76d4d3bfcf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  useLOS: 0
+  eye: {fileID: 0}
+  losBlockMask:
+    serializedVersion: 2
+    m_Bits: 0
+  losMaxDistance: 40
 --- !u!1 &355810401
 GameObject:
   m_ObjectHideFlags: 0
@@ -8116,7 +8209,6 @@ Transform:
   - {fileID: 501230697}
   - {fileID: 931587244}
   - {fileID: 947077010}
-  - {fileID: 717276490}
   m_Father: {fileID: 181741729}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -15256,100 +15348,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: -12.055, y: -160.814, z: -160.298}
---- !u!1 &717276489
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 717276490}
-  - component: {fileID: 717276491}
-  m_Layer: 0
-  m_Name: cup light (4)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &717276490
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 717276489}
-  m_LocalRotation: {x: 0.00000001545431, y: -0.7071068, z: -0.00000001545431, w: 0.7071068}
-  m_LocalPosition: {x: 27.85, y: 12, z: 15.34}
-  m_LocalScale: {x: 1.0000005, y: 1, z: 1.0000005}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 464212115}
-  m_RootOrder: 21
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!108 &717276491
-Light:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 717276489}
-  m_Enabled: 1
-  serializedVersion: 10
-  m_Type: 2
-  m_Shape: 0
-  m_Color: {r: 0, g: 0.6275859, b: 1, a: 1}
-  m_Intensity: 10
-  m_Range: 20
-  m_SpotAngle: 30
-  m_InnerSpotAngle: 21.80208
-  m_CookieSize: 10
-  m_Shadows:
-    m_Type: 2
-    m_Resolution: 3
-    m_CustomResolution: -1
-    m_Strength: 1
-    m_Bias: 0.05
-    m_NormalBias: 0.4
-    m_NearPlane: 0.2
-    m_CullingMatrixOverride:
-      e00: 1
-      e01: 0
-      e02: 0
-      e03: 0
-      e10: 0
-      e11: 1
-      e12: 0
-      e13: 0
-      e20: 0
-      e21: 0
-      e22: 1
-      e23: 0
-      e30: 0
-      e31: 0
-      e32: 0
-      e33: 1
-    m_UseCullingMatrixOverride: 0
-  m_Cookie: {fileID: 0}
-  m_DrawHalo: 0
-  m_Flare: {fileID: 0}
-  m_RenderMode: 1
-  m_CullingMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_RenderingLayerMask: 1
-  m_Lightmapping: 4
-  m_LightShadowCasterMode: 0
-  m_AreaSize: {x: 1, y: 1}
-  m_BounceIntensity: 1
-  m_ColorTemperature: 6570
-  m_UseColorTemperature: 0
-  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
-  m_UseBoundingSphereOverride: 0
-  m_UseViewFrustumForShadowCasterCull: 1
-  m_ShadowRadius: 0
-  m_ShadowAngle: 0
 --- !u!1 &721944958
 GameObject:
   m_ObjectHideFlags: 0
