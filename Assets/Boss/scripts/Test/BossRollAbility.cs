@@ -17,8 +17,11 @@ public class BossRollAbility : MonoBehaviour
     public string rollBackTrigger = "Roll_Back";
 
     [Header("Safety")]
-    public float fallbackDuration = 0.9f; // 애니 이벤트를 못 걸었을 때 종료 타임(초)
+    public float fallbackDuration = 0.9f; // 이벤트가 없을 때 자동 종료 시간
     public bool logDebug = true;
+
+    public bool IsRolling => rolling;
+    public string LastRollTrigger { get; private set; } = "";
 
     private Animator animator;
     private NavMeshAgent agent;
@@ -26,6 +29,7 @@ public class BossRollAbility : MonoBehaviour
     private BossBrain brain;
 
     private bool rolling = false;
+    private bool endByEvent = false;
 
     void Awake()
     {
@@ -37,7 +41,7 @@ public class BossRollAbility : MonoBehaviour
         if (rb)
         {
             rb.isKinematic = true;
-            rb.useGravity = false; // 루트모션에서 중력 사용 안 함
+            rb.useGravity = false;
             rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
         }
     }
@@ -49,7 +53,7 @@ public class BossRollAbility : MonoBehaviour
 
     bool TryStartRoll(string trigger)
     {
-        if (rolling) return false;
+        if (rolling) { if (logDebug) Debug.Log("[Roll] busy"); return false; }
 
         StartCoroutine(RollRoutine(trigger));
         return true;
@@ -58,64 +62,64 @@ public class BossRollAbility : MonoBehaviour
     IEnumerator RollRoutine(string trigger)
     {
         rolling = true;
+        endByEvent = false;
+        LastRollTrigger = trigger;
 
-        // AI와 NavMeshAgent 일시 정지
         if (brain) brain.BeginExternalAction();
 
-        bool prevEnabled = agent.enabled;
         if (agent.enabled)
         {
+            if (logDebug) Debug.Log("[Roll] disabling NavMeshAgent");
             agent.isStopped = true;
             agent.ResetPath();
-            agent.enabled = false; // 루트모션과 충돌 방지
+            agent.enabled = false;
         }
 
-        // 루트모션으로 실제 이동
         animator.applyRootMotion = true;
         animator.ResetTrigger("Idle");
         animator.SetTrigger(trigger);
+        if (logDebug) Debug.Log("[Roll] start trigger=" + trigger);
 
-        if (logDebug) Debug.Log("[Roll] start: " + trigger);
-
-        // 종료는 애니메이션 이벤트 OnRollEnd()로 받는 것을 권장.
-        // 이벤트가 없다면 fallbackDuration 후 자동 종료.
         float t = 0f;
-        while (t < fallbackDuration && rolling)
+        while (!endByEvent && t < fallbackDuration)
         {
             t += Time.deltaTime;
             yield return null;
         }
 
-        EndRollInternal(prevEnabled);
-
-        if (logDebug) Debug.Log("[Roll] end: " + trigger);
+        EndRollInternal();
+        if (logDebug) Debug.Log("[Roll] end trigger=" + trigger);
     }
 
-    // 애니메이션 이벤트로 호출(롤 클립 끝에 이벤트 배치, 함수명: OnRollEnd)
+    // 롤 애니메이션 끝에서 이벤트로 호출
     public void OnRollEnd()
     {
         if (!rolling) return;
-        EndRollInternal(prevAgentEnabledCache: true); // prevAgentEnabled는 내부에서 기억되지 않았으므로 true로 재활성화 시도
+        if (logDebug) Debug.Log("[Roll] OnRollEnd event");
+        endByEvent = true;
     }
 
-    void EndRollInternal(bool prevAgentEnabledCache)
+    void EndRollInternal()
     {
         rolling = false;
-
         animator.applyRootMotion = false;
 
-        // NavMeshAgent 재활성화 + 현재 위치로 동기화
         if (!agent.enabled)
         {
-            // 현재 위치가 NavMesh 위인지 확인 후 Warp
             Vector3 pos = transform.position;
             if (NavMesh.SamplePosition(pos, out var hit, 2f, NavMesh.AllAreas))
+            {
                 agent.Warp(hit.position);
+                if (logDebug) Debug.Log("[Roll] Warp to NavMesh position");
+            }
             else
-                agent.Warp(pos); // 확실하지 않음: NavMesh 밖이면 경로 추적이 바로 되지 않을 수 있음
-
+            {
+                agent.Warp(pos); // NavMesh 밖일 수도 있음(확실하지 않음)
+                if (logDebug) Debug.LogWarning("[Roll] Warp to current pos (off NavMesh)");
+            }
             agent.enabled = true;
             agent.isStopped = false;
+            if (logDebug) Debug.Log("[Roll] NavMeshAgent re-enabled");
         }
 
         if (brain) brain.EndExternalAction();

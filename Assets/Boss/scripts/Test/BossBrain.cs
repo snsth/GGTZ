@@ -13,7 +13,7 @@ using UnityEngine.AI;
 public class BossBrain : MonoBehaviour
 {
     [Header("Target")]
-    public Transform player;        // 비우면 태그 "Player" 자동 탐색
+    public Transform player; // 비우면 태그 "Player" 탐색
 
     private NavMeshAgent agent;
     private Animator animator;
@@ -23,7 +23,7 @@ public class BossBrain : MonoBehaviour
     private enum State { Chase, Strafe, Attacking, Recover }
     private State state = State.Chase;
 
-    // 외부 액션(롤/점프 등) 중에는 AI 로직 정지
+    // 외부 액션(롤/점프 등) 중에는 AI 갱신 중지
     public bool IsExternalBusy { get; private set; } = false;
 
     void Awake()
@@ -38,7 +38,7 @@ public class BossBrain : MonoBehaviour
     {
         if (!player)
         {
-            var go = GameObject.FindGameObjectWithTag("Player"); // 확실하지 않음: 태그가 다르면 직접 할당
+            var go = GameObject.FindGameObjectWithTag("Player");
             if (go) player = go.transform;
         }
 
@@ -53,7 +53,7 @@ public class BossBrain : MonoBehaviour
     {
         if (!player || !agent || !locomotion) return;
 
-        // 외부 액션(롤 등) 중이면 AI 갱신 중지, 애니 파라미터만 최소화
+        // 외부 액션 중이면 로코모션/공격 판단 정지
         if (IsExternalBusy)
         {
             animator.SetFloat("Speed", 0f);
@@ -116,7 +116,7 @@ public class BossBrain : MonoBehaviour
         opt.MarkUsed();
     }
 
-    // 애니메이션 이벤트로 호출
+    // 애니메이션 이벤트에서 호출
     public void EndAttack()
     {
         animator.applyRootMotion = false;
@@ -124,7 +124,7 @@ public class BossBrain : MonoBehaviour
         state = State.Recover;
     }
 
-    // 외부 액션 제어(롤 등)
+    // 외부 액션 시작/종료(BossRollAbility 등에서 호출)
     public void BeginExternalAction()
     {
         IsExternalBusy = true;
