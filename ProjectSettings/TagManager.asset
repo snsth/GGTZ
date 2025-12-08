@@ -6,8 +6,6 @@ TagManager:
   tags:
   - Ground
   - Boss
-  - Default
-  - Stone
   layers:
   - Default
   - TransparentFX
@@ -17,7 +15,7 @@ TagManager:
   - UI
   - ground
   - Boss
-  - Player
+  - 
   - 
   - 
   - 
