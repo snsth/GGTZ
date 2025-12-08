@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerCombat : MonoBehaviour
 {
@@ -9,6 +10,7 @@ public class PlayerCombat : MonoBehaviour
     public Transform characterBody;
     public Transform cameraArm;
     public WeaponHitbox weapon;
+    public PlayerAbilities abilities;
 
     [Header("Attack")]
     public float attackDuration = 0.8f;     // Use Anim Events=false일 때 타이머 기준
@@ -26,6 +28,7 @@ public class PlayerCombat : MonoBehaviour
     public float dodgeForce = 10f;
     public float parryDuration = 0.5f;
     public float parryCooldown = 2f;
+    public PlayerAbilityUI abilityUI; // 인스펙터 할당
 
     [Header("Animator States")]
     public string attack1State = "Attack_1";
@@ -34,11 +37,24 @@ public class PlayerCombat : MonoBehaviour
     public bool useFullPath = false;
     public float crossFadeDuration = 0.05f;
 
+    [Header("Ability Anim Triggers")]
+    public string healTrigger = "doHeal";
+    public string buffTrigger = "doBuff";
+    public string ultimateTrigger = "doUltimate";
+
+    [Header("Ability Casting Lock")]
+    public bool lockOnAbilityCast = true;
+    public float healCastTimeout = 1.0f;
+    public float buffCastTimeout = 1.0f;
+    public float ultimateCastTimeout = 1.5f;
+    private bool isCastingAbility = false;
+    private Coroutine castLockCo;
+
     // 상태
     public bool IsAttacking { get; private set; }
     public bool IsDodging { get; private set; }
     public bool IsParrying { get; private set; }
-    public bool IsBusy => IsAttacking || IsDodging || IsParrying;
+    public bool IsBusy => IsAttacking || IsDodging || IsParrying || isCastingAbility;
 
     private int currentCombo = 0;           // 0=비공격, 1~3
     private const int maxCombo = 3;
@@ -46,8 +62,8 @@ public class PlayerCombat : MonoBehaviour
     private float comboTimer = 0f;          // 콤보 유지 타이머
 
     private float nextDodgeTime = 0f;
-    private float nextParryTime = 0f;
     private Transform lockOnTarget;
+
 
     // 콤보창/버퍼(이벤트 미사용일 때만)
     private bool canQueueNext = false;
@@ -90,6 +106,31 @@ public class PlayerCombat : MonoBehaviour
         {
             buffered = false;
             QueueNextCombo();
+        }
+
+        if (Input.GetKeyDown(KeyCode.H))
+        {
+            if (!IsBusy && abilities != null && abilities.TryHeal())
+            {
+                BeginCastLock(healCastTimeout);
+                animator.SetTrigger(healTrigger);
+            }
+        }
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            if (!IsBusy && abilities != null && abilities.TryBuff())
+            {
+                BeginCastLock(buffCastTimeout);
+                animator.SetTrigger(buffTrigger);
+            }
+        }
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            if (!IsBusy && abilities != null && abilities.TryUltimate())
+            {
+                BeginCastLock(ultimateCastTimeout);
+                animator.SetTrigger(ultimateTrigger);
+            }
         }
     }
 
@@ -224,23 +265,52 @@ public class PlayerCombat : MonoBehaviour
     public void TryParry(bool isMoving)
     {
         if (IsBusy) return;
-        if (Time.time < nextParryTime) return;
         if (isMoving || currentCombo > 0) return;
+
+        // 쿨타임 준비됐을 때만 애니메이션 재생
+        if (!(abilities?.TryGuard() ?? false)) return;
 
         animator.SetTrigger("doParry");
         IsParrying = true;
-        nextParryTime = Time.time + parryCooldown;
-        StartCoroutine(EndParryAfter(parryDuration));
+        StartCoroutine(EndParryAfter(0.5f));
     }
 
     private IEnumerator EndParryAfter(float t)
     {
         yield return new WaitForSeconds(t);
         IsParrying = false;
+        // abilityUI?.SetGuardActive(false); // PlayerAbilities가 처리하므로 제거
     }
+
     // 히트박스 이벤트(있으면 그대로 사용 가능)
     public void Anim_OpenHitbox() => weapon?.Open();
     public void Anim_CloseHitbox() => weapon?.Close();
+
+    // Ability 애니메이션 이벤트에서 호출
+    public void Anim_HealApply() { abilities?.ApplyHealIfPending(); EndCastLock(); }
+    public void Anim_BuffApply() { abilities?.ApplyBuffIfPending(); EndCastLock(); }
+    public void Anim_UltimateApply() { abilities?.ApplyUltimateIfPending(); EndCastLock(); }
+
+    // 캐스팅 락
+    void BeginCastLock(float timeout)
+    {
+        if (!lockOnAbilityCast) return;
+        isCastingAbility = true;
+        if (castLockCo != null) { StopCoroutine(castLockCo); castLockCo = null; }
+        if (timeout > 0f) castLockCo = StartCoroutine(CastLockTimeout(timeout));
+    }
+    IEnumerator CastLockTimeout(float t)
+    {
+        yield return new WaitForSeconds(t);
+        isCastingAbility = false;       // 안전 해제
+        castLockCo = null;
+    }
+    void EndCastLock()
+    {
+        if (!lockOnAbilityCast) return;
+        isCastingAbility = false;
+        if (castLockCo != null) { StopCoroutine(castLockCo); castLockCo = null; }
+    }
 
     // Attack_n 마지막 프레임(Idle 복귀 직전)
     public void Anim_AttackFinished()
@@ -255,7 +325,6 @@ public class PlayerCombat : MonoBehaviour
 
         if (currentCombo >= maxCombo) currentCombo = 0;
 
-        // animator.ResetTrigger("OnWeaponAttack"); // 트리거 안씀
     }
 
     private Vector3 GetDodgeDirection()
