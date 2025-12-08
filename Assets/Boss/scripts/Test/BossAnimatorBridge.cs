@@ -32,6 +32,9 @@ public class BossAnimatorBridge : MonoBehaviour
         rb.MovePosition(nextPos);
         rb.MoveRotation(nextRot);
 
-        if (agent) agent.nextPosition = nextPos;
+        if (agent && agent.enabled && agent.isOnNavMesh)
+        {
+            agent.nextPosition = nextPos;
+        }
     }
 }
