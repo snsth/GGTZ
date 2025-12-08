@@ -18,9 +18,16 @@ public class GameManager : MonoBehaviour
     public Image Heal;
     public Image Buff;
     public Image Ultimate;
-    public RectTransform playerHP;
-    public RectTransform playerMP;
+    public RectTransform PlayerHP;
+    public RectTransform BossHP;
+    public PlayerHealth playerHealth;
+    public BossHealth bossHealth;
 
+    void Awake()
+    {
+        if (bossHealth != null) bossHealth.hpFill = BossHP;
+        if (playerHealth != null) playerHealth.hpFill = PlayerHP; 
+    }
 
     public void GameStart()
     {
