@@ -2493,8 +2493,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   roll: {fileID: 342008655}
+
   jump: {fileID: 342008663}
   manualAttack: {fileID: 342008662}
+
   fuzzyThreshold: 1
   commands:
   - action: 5
@@ -41278,20 +41280,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d2036d4c5d9c6a14d86c145faa724ff1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animator: {fileID: 0}
-  rigid: {fileID: 0}
-  characterBody: {fileID: 0}
-  cameraArm: {fileID: 0}
-  weapon: {fileID: 0}
+  animator: {fileID: 2118989929}
+  rigid: {fileID: 2118989926}
+  characterBody: {fileID: 2118989922}
+  cameraArm: {fileID: 1531388291}
+  weapon: {fileID: 253817461}
   attackDuration: 0.8
-  hitboxOpenDelay: 0.1
-  hitboxActiveTime: 0.3
-  useAnimEvents: 1
+  useAnimEvents: 0
+  minTimeBetweenAttacks: 0.05
   comboInterval: 1
+  comboWindowOpenNormalized: 0.5
+  comboWindowCloseNormalized: 0.7
+  comboBufferTime: 0.25
   dodgeCooldown: 1
   dodgeForce: 10
   parryDuration: 0.5
   parryCooldown: 2
+  attack1State: Attack_1
+  attack2State: Attack_2
+  attack3State: Attack_3
+  useFullPath: 0
+  crossFadeDuration: 0.05
 --- !u!1 &2134876508
 GameObject:
   m_ObjectHideFlags: 0
