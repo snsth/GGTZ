@@ -1,26 +1,27 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody))]
 public class PlayerController : MonoBehaviour
 {
     [Header("Refs")]
     [SerializeField] private Transform CharacterBody;
     [SerializeField] private Transform CameraArm;
-    [SerializeField] private Transform cameraTransform; // Main Camera 할당
-    [SerializeField] private PlayerCombat combat;       // 추가: 전투 컴포넌트 참조
+    [SerializeField] private Transform cameraTransform; // Main Camera
+    [SerializeField] private PlayerCombat combat;
 
     [Header("Lock-On")]
     [SerializeField] private KeyCode lockOnKey = KeyCode.Q;
     [SerializeField] private float lockOnRadius = 15f;
-    [SerializeField] private LayerMask lockOnLayer; // 적 레이어/태그에 맞게 셋
+    [SerializeField] private LayerMask lockOnLayer;
     [SerializeField] private float lockOnDirectionDeadzone = 0.2f;
 
     [Header("Camera")]
     [SerializeField] private float cameraTargetDistance = 4.5f;
     [SerializeField] private float cameraMinDistance = 1.0f;
     [SerializeField] private float cameraMaxDistance = 6.0f;
-    [SerializeField] private float cameraHeight = 1.6f; // 피벗 높이
+    [SerializeField] private float cameraHeight = 1.6f;
     [SerializeField] private float cameraCollisionRadius = 0.25f;
-    [SerializeField] private LayerMask cameraCollisionMask; // 환경/지형 레이어. Player는 제외
+    [SerializeField] private LayerMask cameraCollisionMask;
     [SerializeField] private float yawSmoothTime = 0.03f;
     [SerializeField] private float pitchSmoothTime = 0.03f;
     [SerializeField] private float distSmoothTime = 0.05f;
@@ -36,6 +37,12 @@ public class PlayerController : MonoBehaviour
     public float minPitch = -40f;
     public float maxPitch = 60f;
 
+    [Header("Ground Check")]
+    [SerializeField] private LayerMask groundMask = ~0;
+    [SerializeField] private float groundProbeRadius = 0.28f;
+    [SerializeField] private float groundProbeOffsetY = 0.2f;
+    [SerializeField] private float groundProbeDown = 0.05f;
+
     private float yaw = 0f, pitch = 10f;
     private float yawVel = 0f, pitchVel = 0f;
     private float currentDistance = 0f, distVel = 0f;
@@ -50,12 +57,13 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
-        animator = CharacterBody.GetComponent<Animator>();
+        animator = CharacterBody != null ? CharacterBody.GetComponent<Animator>() : null;
         rigid = GetComponent<Rigidbody>();
-        if (cameraTransform == null)
-            cameraTransform = Camera.main != null ? Camera.main.transform : null;
+        rigid.interpolation = RigidbodyInterpolation.Interpolate;
+        rigid.constraints = RigidbodyConstraints.FreezeRotation;
 
-        // PlayerCombat 연결
+        if (cameraTransform == null) cameraTransform = Camera.main ? Camera.main.transform : null;
+
         if (combat == null) combat = GetComponent<PlayerCombat>();
         if (combat != null)
         {
@@ -66,17 +74,14 @@ public class PlayerController : MonoBehaviour
             if (combat.weapon != null && combat.weapon.owner == null)
                 combat.weapon.owner = transform;
         }
-        else
-        {
-            Debug.LogWarning("PlayerCombat가 없습니다. 전투 입력이 동작하지 않습니다.");
-        }
 
-        // 초기 카메라
-        yaw = CharacterBody.eulerAngles.y;
+        yaw = CharacterBody != null ? CharacterBody.eulerAngles.y : transform.eulerAngles.y;
         currentDistance = cameraTargetDistance;
-        CameraArm.position = CharacterBody.position + Vector3.up * cameraHeight;
-        CameraArm.rotation = Quaternion.Euler(pitch, yaw, 0f);
-
+        if (CameraArm != null)
+        {
+            CameraArm.position = CharacterBody.position + Vector3.up * cameraHeight;
+            CameraArm.rotation = Quaternion.Euler(pitch, yaw, 0f);
+        }
         if (cameraTransform != null)
         {
             cameraTransform.position = CameraArm.position - CameraArm.forward * currentDistance;
@@ -92,6 +97,7 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        UpdateGrounded();
         UpdateMovement();
     }
 
@@ -102,14 +108,12 @@ public class PlayerController : MonoBehaviour
 
     private void HandleInput()
     {
-        // 이동 입력 판단(패링 조건 전달용)
         Vector2 moveInput = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
         isMoving = moveInput.sqrMagnitude > 0.0001f;
 
-        // 공격/회피/패링은 PlayerCombat에 위임
         if (combat != null)
         {
-            if (Input.GetKeyDown(KeyCode.Mouse0) && isGrounded)
+            if (Input.GetKeyDown(KeyCode.Mouse0))
                 combat.TryAttack();
 
             if (Input.GetKeyDown(KeyCode.LeftAlt) && isGrounded)
@@ -119,11 +123,9 @@ public class PlayerController : MonoBehaviour
                 combat.TryParry(isMoving);
         }
 
-        // 점프
         if (Input.GetButtonDown("Jump") && isGrounded)
             Jump();
 
-        // 락온 토글
         if (Input.GetKeyDown(lockOnKey))
         {
             if (isLockedOn) ClearLockOn();
@@ -131,18 +133,20 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private void UpdateGrounded()
+    {
+        // 발 아래쪽으로 보정된 지점에서 체크
+        Vector3 feet = transform.position - Vector3.up * (groundProbeOffsetY + groundProbeDown);
+        isGrounded = Physics.CheckSphere(feet, groundProbeRadius, groundMask, QueryTriggerInteraction.Ignore);
+
+        if (isGrounded && animator != null && animator.GetBool("isJump"))
+            animator.SetBool("isJump", false);
+    }
+
     private void AcquireLockOn()
     {
         Vector3 center = transform.position;
         Collider[] hits = Physics.OverlapSphere(center, lockOnRadius, lockOnLayer, QueryTriggerInteraction.Collide);
-
-        if (hits == null || hits.Length == 0)
-        {
-            isLockedOn = false;
-            lockOnTarget = null;
-            if (combat != null) combat.SetLockOnTarget(null);
-            return;
-        }
 
         Transform best = null;
         float bestScore = float.MaxValue;
@@ -157,28 +161,24 @@ public class PlayerController : MonoBehaviour
 
             if (candidate == transform) continue;
 
-            Vector3 to = candidate.position - cameraTransform.position;
+            Vector3 to = candidate.position - (cameraTransform ? cameraTransform.position : center);
             float dist = to.magnitude;
             float angle = Vector3.Angle(camFwd, to);
             float score = dist + angle * 0.1f;
 
-            if (score < bestScore)
-            {
-                bestScore = score;
-                best = candidate;
-            }
+            if (score < bestScore) { bestScore = score; best = candidate; }
         }
 
         lockOnTarget = best;
         isLockedOn = lockOnTarget != null;
-        if (combat != null) combat.SetLockOnTarget(lockOnTarget);
+        combat?.SetLockOnTarget(lockOnTarget);
     }
 
     private void ClearLockOn()
     {
         isLockedOn = false;
         lockOnTarget = null;
-        if (combat != null) combat.SetLockOnTarget(null);
+        combat?.SetLockOnTarget(null);
     }
 
     private void UpdateMovement()
@@ -188,8 +188,11 @@ public class PlayerController : MonoBehaviour
         if (!canMove)
         {
             isMoving = false;
-            animator.SetBool("isWalk", false);
-            animator.SetBool("isRun", false);
+            if (animator != null)
+            {
+                animator.SetBool("isWalk", false);
+                animator.SetBool("isRun", false);
+            }
             ClearDirectionalBools();
             return;
         }
@@ -198,20 +201,22 @@ public class PlayerController : MonoBehaviour
         isMoving = moveInput.sqrMagnitude > 0.0001f;
         bool running = isMoving && Input.GetKey(KeyCode.LeftShift);
 
-        animator.SetBool("isWalk", isMoving && !running);
-        animator.SetBool("isRun", isMoving && running);
+        if (animator != null)
+        {
+            animator.SetBool("isWalk", isMoving && !running);
+            animator.SetBool("isRun", isMoving && running);
+        }
 
         if (isMoving)
         {
             Vector3 moveDir = GetMoveDirection();
             float speed = running ? runSpeed : walkSpeed;
 
-            // 이동
-            transform.position += moveDir * Time.fixedDeltaTime * speed;
+            Vector3 targetPos = rigid.position + moveDir * speed * Time.fixedDeltaTime;
+            rigid.MovePosition(targetPos);
 
-            // 회전
             bool isAttacking = (combat != null) && combat.IsAttacking;
-            if (!isAttacking)
+            if (!isAttacking && CharacterBody != null)
             {
                 if (isLockedOn && lockOnTarget != null)
                 {
@@ -241,7 +246,7 @@ public class PlayerController : MonoBehaviour
             ClearDirectionalBools();
 
             bool isAttacking = (combat != null) && combat.IsAttacking;
-            if (isLockedOn && lockOnTarget != null && !isAttacking)
+            if (isLockedOn && lockOnTarget != null && !isAttacking && CharacterBody != null)
             {
                 Vector3 to = lockOnTarget.position - CharacterBody.position;
                 to.y = 0f;
@@ -256,10 +261,12 @@ public class PlayerController : MonoBehaviour
 
     private void Jump()
     {
-        animator.SetBool("doJump", true);
-        animator.SetBool("isJump", true);
         rigid.AddForce(Vector3.up * jumpPower, ForceMode.Impulse);
-        isGrounded = false;
+        if (animator != null)
+        {
+            animator.SetBool("doJump", true);
+            animator.SetBool("isJump", true);
+        }
     }
 
     private Vector3 GetMoveDirection()
@@ -313,9 +320,7 @@ public class PlayerController : MonoBehaviour
         Vector3 dir = (desiredPos - pivot).normalized;
 
         if (Physics.SphereCast(pivot, cameraCollisionRadius, dir, out RaycastHit hit, desiredDist, cameraCollisionMask, QueryTriggerInteraction.Ignore))
-        {
             desiredDist = Mathf.Clamp(hit.distance - 0.05f, cameraMinDistance, cameraTargetDistance);
-        }
 
         currentDistance = Mathf.SmoothDamp(currentDistance, desiredDist, ref distVel, distSmoothTime);
 
@@ -325,23 +330,15 @@ public class PlayerController : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Ground"))
-        {
-            isGrounded = true;
+        if (isGrounded && animator != null && animator.GetBool("isJump"))
             animator.SetBool("isJump", false);
-        }
     }
 
-    private void OnCollisionExit(Collision collision)
-    {
-        if (collision.gameObject.CompareTag("Ground"))
-        {
-            isGrounded = false;
-        }
-    }
+    private void OnCollisionExit(Collision collision) { }
 
     private void ClearDirectionalBools()
     {
+        if (animator == null) return;
         animator.SetBool("isLeft", false);
         animator.SetBool("isRight", false);
         animator.SetBool("isBack", false);
@@ -349,6 +346,8 @@ public class PlayerController : MonoBehaviour
 
     private void UpdateLockOnDirectionalAnim(Vector3 moveDir, bool canMove)
     {
+        if (animator == null) return;
+
         if (!isLockedOn || lockOnTarget == null || !canMove || moveDir.sqrMagnitude < 0.0001f)
         {
             ClearDirectionalBools();

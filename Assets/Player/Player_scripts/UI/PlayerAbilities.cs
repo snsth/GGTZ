@@ -4,12 +4,14 @@ using UnityEngine;
 
 public class PlayerAbilities : MonoBehaviour
 {
+    public enum AbilityKind { None, Heal, Buff, Ultimate }
+
     [Header("Refs")]
     public PlayerHealth health;
     public PlayerDamageable damageReceiver;
     public PlayerAbilityUI ui;
     public WeaponHitbox weapon;
-    // public SlashVFX slashVfx; -> 궁 이펙트
+    //public SlashVFX slashVfx;
     public LayerMask ultimateTargets;
 
     [Header("Balance")]
@@ -17,18 +19,18 @@ public class PlayerAbilities : MonoBehaviour
     public float guardDuration = 0.5f;
 
     public float healCooldown = 45f;
-    public float healPercent = 0.25f;       // MaxHP 25%
+    public float healPercent = 0.25f;
 
     public float buffCooldown = 30f;
     public float buffDuration = 5f;
-    public float buffDamageMultiplier = 1.5f; // 필요시 변경
+    public float buffDamageMultiplier = 1.5f;
 
     public float ultimateCooldown = 120f;
-    public float ultimateDamageByMaxHpPercent = 0.5f; // MaxHP 50%
+    public float ultimateDamageByMaxHpPercent = 0.5f;
     public float ultimateRadius = 2.5f;
     public float ultimateForwardOffset = 1.5f;
 
-    // 쿨다운 타임스탬프
+    // 쿨다운
     private float guardCdEnd, healCdEnd, buffCdEnd, ultCdEnd;
 
     // 버프 상태
@@ -36,7 +38,7 @@ public class PlayerAbilities : MonoBehaviour
     private float buffEndTime;
     private int baseWeaponDamage;
 
-    // 애니메이션 이벤트용 Pending 플래그
+    // pending
     private bool healPending, buffPending, ultPending;
 
     void Start()
@@ -72,7 +74,7 @@ public class PlayerAbilities : MonoBehaviour
 
         healCdEnd = Time.time + healCooldown;
         ui?.StartHealCooldown(healCooldown);
-        healPending = true; // 이벤트 대기
+        healPending = true;
         return true;
     }
 
@@ -124,7 +126,7 @@ public class PlayerAbilities : MonoBehaviour
     // 궁극기: 쿨만 시작, 효과는 이벤트에서
     public bool TryUltimate()
     {
-        if (Time.time < ultCdEnd) return false;
+        if (Time.time < ultCdEnd || ultPending) return false;
 
         ultCdEnd = Time.time + ultimateCooldown;
         ui?.StartUltimateCooldown(ultimateCooldown);
@@ -132,27 +134,25 @@ public class PlayerAbilities : MonoBehaviour
         return true;
     }
 
-    public void ApplyUltimateIfPending()
+    public void ApplyUltimateIfPending_Collider(AbilityVFX vfx, Transform instigator)
     {
         if (!ultPending) return;
         ultPending = false;
 
-        float dmg = (health != null ? health.maxHp : 100f) * ultimateDamageByMaxHpPercent;
-        Vector3 center = transform.position + transform.forward * ultimateForwardOffset;
+        int dmg = Mathf.RoundToInt((health != null ? health.maxHp : 100f) * ultimateDamageByMaxHpPercent);
 
-        var cols = Physics.OverlapSphere(center, ultimateRadius, ultimateTargets, QueryTriggerInteraction.Ignore);
-        var alreadyHit = new HashSet<object>();
-        foreach (var c in cols)
+        if (vfx != null)
+            vfx.PlayUltimateWithHitbox(instigator, dmg, ultimateTargets);
+    }
+
+    // 타임아웃/강제해제 시 호출
+    public void CancelPending(AbilityKind k)
+    {
+        switch (k)
         {
-            var target = c.GetComponentInParent<IDamageable>();
-            if (target != null && target.IsAlive && alreadyHit.Add(target))
-            {
-                Vector3 hp = c.ClosestPoint(center);
-                Vector3 hn = -transform.forward;
-                target.TakeDamage(Mathf.RoundToInt(dmg), hp, hn, this);
-            }
+            case AbilityKind.Heal: healPending = false; break;
+            case AbilityKind.Buff: buffPending = false; break;
+            case AbilityKind.Ultimate: ultPending = false; break;
         }
-
-        // slashVfx?.PlayOnce(); // 연출 선택
     }
 }
