@@ -42924,6 +42924,10 @@ PrefabInstance:
       propertyPath: hpFill
       value: 
       objectReference: {fileID: 1857551607}
+    - target: {fileID: 1045560228354489846, guid: 4cfc37fa2293f1642a4cba485aba567a, type: 3}
+      propertyPath: damage
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 1277463393809240584, guid: 4cfc37fa2293f1642a4cba485aba567a, type: 3}
       propertyPath: m_Name
       value: Player
