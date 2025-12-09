@@ -10,7 +10,9 @@ public enum VoiceAction
     RollLeft, RollRight, RollForward, RollBack,
     Jump,
     Attack,
-    Punch
+    Punch,
+    Fall,
+    Kick
 }
 
 [Serializable]
@@ -19,6 +21,8 @@ public class CommandKeywordSet
     public VoiceAction action = VoiceAction.RollLeft;
     public List<string> keywords = new List<string>();
     public float cooldown = 0.8f;
+    [Tooltip("점수가 같을 때 높은 값이 우선. Punch(10) > Attack(5)처럼 설정 권장")]
+    public int priority = 5;
 }
 
 [DisallowMultipleComponent]
@@ -27,7 +31,6 @@ public class VoiceCommandRouter : MonoBehaviour
 {
     [Header("Dependencies")]
     public BossRollAbility roll;
-    public BossJumpAbility jump;
     public BossManualAttackAbility manualAttack;
 
     [Header("Fuzzy Matching")]
@@ -86,6 +89,8 @@ public class VoiceCommandRouter : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Y)) Trigger(VoiceAction.Jump);
         if (Input.GetKeyDown(KeyCode.U)) Trigger(VoiceAction.Attack);
         if (Input.GetKeyDown(KeyCode.I)) Trigger(VoiceAction.Punch);
+        if (Input.GetKeyDown(KeyCode.O)) Trigger(VoiceAction.Fall);
+        if (Input.GetKeyDown(KeyCode.P)) Trigger(VoiceAction.Kick);
     }
 
     void HandleRecognized(string raw)
@@ -142,9 +147,11 @@ public class VoiceCommandRouter : MonoBehaviour
             case VoiceAction.RollForward: roll?.TryRollForward(); break;
             case VoiceAction.RollBack: roll?.TryRollBack(); break;
 
-            case VoiceAction.Jump: jump?.TryJump(); break;
+            case VoiceAction.Jump:manualAttack?.TryJumpAttack();break;
             case VoiceAction.Attack: manualAttack?.TryAttack(); break;
             case VoiceAction.Punch: manualAttack?.TryPunch(); break;
+            case VoiceAction.Kick: manualAttack?.TryKick(); break;
+            case VoiceAction.Fall: manualAttack?.TryFallAttack(); break;
         }
     }
 

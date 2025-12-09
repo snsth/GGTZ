@@ -2835,52 +2835,48 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   roll: {fileID: 342008655}
-  jump: {fileID: 0}
-  manualAttack: {fileID: 0}
-  fuzzyThreshold: 1
+  manualAttack: {fileID: 342008666}
+  fuzzyThreshold: 0.6
   commands:
-  - action: 1
+  - action: 5
     keywords:
-    - "\uC67C\uCABD"
-    - "\uC67C"
-    - "\uC88C"
-    - "\uB808\uD504\uD2B8"
-    - left
-    - "\uC67C\uCABD\uC73C\uB85C"
-    - "\uC67C\uB2E4"
-    - "\uC67C\uAD6C\uB974\uAE30"
-    - "\uC67C\uAD74\uB7EC"
+    - Jump
+    - job
+    - chomp
+    - jump
+    - trump
+    - Job
     cooldown: 0.8
-  - action: 2
+    priority: 5
+  - action: 6
     keywords:
-    - "\uC624\uB978\uCABD"
-    - "\uC624\uB978"
-    - "\uC6B0"
-    - "\uB77C\uC774\uD2B8"
-    - right
-    - "\uC624\uB978\uCABD\uC73C\uB85C"
-    - "\uC624\uB2E4"
-    - "\uC624\uAD6C\uB974\uAE30"
-    - "\uC624\uAD74\uB7EC"
+    - attack
+    - Opec
+    - OK
+    - Attack
+    - opec
     cooldown: 0.8
-  - action: 3
+    priority: 5
+  - action: 7
     keywords:
-    - "\uC55E"
-    - "\uC804\uC9C4"
-    - "\uC55E\uC73C\uB85C"
-    - "\uD3EC\uC6CC\uB4DC"
-    - forward
-    - "\uC55E\uAD6C\uB974\uAE30"
+    - punch
+    - Punch
     cooldown: 0.8
-  - action: 4
+    priority: 5
+  - action: 8
     keywords:
-    - "\uB4A4"
-    - "\uD6C4\uC9C4"
-    - "\uB4A4\uB85C"
-    - "\uBC31"
-    - back
-    - "\uB4A4\uAD6C\uB974\uAE30"
+    - For
+    - Fall
     cooldown: 0.8
+    priority: 5
+  - action: 9
+    keywords:
+    - Kick
+    - kick
+    - Keep
+    - keep
+    cooldown: 0.8
+    priority: 5
   allowKeyboardTest: 1
   logDebug: 1
 --- !u!114 &342008654
@@ -2988,6 +2984,41 @@ MonoBehaviour:
   xAtFull: 0
   xAtZero: -512
   uiLerpSpeed: 12
+--- !u!114 &342008666
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 342008632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4ee754880038b2479ac1f91cba900f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  attackTrigger: Voice_Attack
+  punchTrigger: Voice_Punch
+  jumpAttackTrigger: Voice_JumpAttack
+  FallAttackTrigger: Voice_FallAttack
+  KickAttackTrigger: Voice_Kick
+  fallbackDuration: 0.9
+  logDebug: 1
+  attackHitboxes: []
+  punchHitboxes: []
+  jumpAttackHitboxes: []
+--- !u!65 &342008667
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 342008632}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 3, y: 1, z: 3}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &355810401
 GameObject:
   m_ObjectHideFlags: 0
@@ -39683,7 +39714,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_text: "Golem Boss (Player 2)\n\uC774\uB3D9 : \uC790\uB3D9 (\uD50C\uB808\uC774\uC5B4
-    \uCD94\uACA9)\n\uACF5\uACA9 : \uC74C\uC131 \uC778\uC2DD\n"
+    \uCD94\uACA9)\n\uC870\uC791\uBC95 : \uC74C\uC131\uC778\uC2DD \uAE30\uBC18\n\uD380\uCE58
+    \uACF5\uACA9 : Punch (\uC74C\uC131)\n\uBC1C\uCC28\uAE30 \uACF5\uACA9 : Kick (\uC74C\uC131)\n\uC810\uD504
+    \uACF5\uACA9 : Jump (\uC74C\uC131)\n\uBB49\uAC1C\uAE30 \uACF5\uACA9 : Fall (\uC74C\uC131)\n"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 217770323498eba4cb0906fcc26312f8, type: 2}
   m_sharedMaterial: {fileID: -4672276355770820951, guid: 217770323498eba4cb0906fcc26312f8, type: 2}
@@ -39959,7 +39992,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1774618995
 MonoBehaviour:
   m_ObjectHideFlags: 0
